@@ -1,4 +1,4 @@
-import type { WorkoutSession, WorkoutStats, HabitDay } from './types'
+import type { WorkoutSession, WorkoutStats, HabitDay, ExerciseProgressPoint, PersonalRecord, VolumePoint, FrequencyPoint, BodyMetric } from './types'
 
 const BASE = '/api'
 
@@ -53,5 +53,18 @@ export const api = {
   },
   habits: {
     chart: (weeks = 52) => request<HabitDay[]>(`/habits/chart?weeks=${weeks}`),
+  },
+  progress: {
+    exercise: (exerciseId: number, months = 6) =>
+      request<ExerciseProgressPoint[]>(`/progress/exercise/${exerciseId}?months=${months}`),
+    records: () => request<PersonalRecord[]>('/progress/records'),
+    volume: (weeks = 12) => request<VolumePoint[]>(`/progress/volume?weeks=${weeks}`),
+    frequency: (months = 6) => request<FrequencyPoint[]>(`/progress/frequency?months=${months}`),
+  },
+  bodyMetrics: {
+    list: () => request<BodyMetric[]>('/body-metrics/'),
+    create: (body: unknown) =>
+      request<BodyMetric>('/body-metrics/', { method: 'POST', body: JSON.stringify(body) }),
+    delete: (id: number) => request(`/body-metrics/${id}`, { method: 'DELETE' }),
   },
 }

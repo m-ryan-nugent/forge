@@ -64,3 +64,38 @@ export interface SetEntry {
   distance: number | null
   completed: boolean
 }
+
+export interface ExerciseProgressPoint {
+  date: string
+  max_weight: number
+  total_volume: number
+  set_count: number
+}
+
+export interface PersonalRecord {
+  exercise_id: number
+  exercise_name: string
+  muscle_group: string
+  max_weight: number
+  reps_at_max: number | null
+  date: string
+}
+
+export interface VolumePoint {
+  week_start: string
+  muscle_group: string
+  total_volume: number
+}
+
+export interface FrequencyPoint {
+  week_start: string
+  count: number
+}
+
+export interface BodyMetric {
+  id: number
+  date: string
+  body_weight: number | null
+  body_fat_percentage: number | null
+  notes: string | null
+}
