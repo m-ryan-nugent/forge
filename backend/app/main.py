@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 
 from app.database import create_db_and_tables, engine
 from app.models.exercise import Exercise, MuscleGroup, Equipment, ExerciseCategory
-from app.routers import exercises, workouts
+from app.routers import exercises, workouts, habits
 
 app = FastAPI(title="Forge API", version="0.1.0")
 
@@ -55,6 +55,7 @@ def on_startup():
 
 app.include_router(exercises.router, prefix="/api")
 app.include_router(workouts.router, prefix="/api")
+app.include_router(habits.router, prefix="/api")
 
 
 @app.get("/api/health")
