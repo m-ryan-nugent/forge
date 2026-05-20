@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import type { WorkoutSession } from '../api/types'
 
@@ -30,7 +31,11 @@ export function WorkoutHistory() {
       ) : (
         <div className="space-y-2">
           {workouts.map((w) => (
-            <div key={w.id} className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between">
+            <Link
+              key={w.id}
+              to={`/workout/${w.id}`}
+              className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between hover:border-gray-300 transition-colors"
+            >
               <div>
                 <p className="font-medium text-gray-900">{w.title}</p>
                 <p className="text-xs text-gray-400">
@@ -38,10 +43,10 @@ export function WorkoutHistory() {
                   {w.duration_minutes ? ` · ${w.duration_minutes} min` : ''}
                 </p>
               </div>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full ${w.completed ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
+              <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${w.completed ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
                 {w.completed ? 'Done' : 'In Progress'}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       )}
