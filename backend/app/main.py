@@ -5,6 +5,8 @@ from sqlmodel import Session, select
 from app.database import create_db_and_tables, engine
 from app.models.exercise import Exercise, MuscleGroup, Equipment, ExerciseCategory
 from app.routers import exercises, workouts, habits
+from app.routers import progress as progress_router, body_metrics as body_metrics_router
+from app.models.body_metric import BodyMetric  # noqa: F401 — registers table with SQLModel metadata
 
 app = FastAPI(title="Forge API", version="0.1.0")
 
@@ -56,6 +58,8 @@ def on_startup():
 app.include_router(exercises.router, prefix="/api")
 app.include_router(workouts.router, prefix="/api")
 app.include_router(habits.router, prefix="/api")
+app.include_router(progress_router.router, prefix="/api")
+app.include_router(body_metrics_router.router, prefix="/api")
 
 
 @app.get("/api/health")
