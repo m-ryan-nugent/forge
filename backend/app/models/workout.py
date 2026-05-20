@@ -4,6 +4,22 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
+class WorkoutSessionCreate(SQLModel):
+    title: str
+    date: Optional[date_type] = None
+    duration_minutes: Optional[int] = None
+    notes: Optional[str] = None
+    completed: bool = False
+
+
+class WorkoutSessionUpdate(SQLModel):
+    title: Optional[str] = None
+    date: Optional[date_type] = None
+    duration_minutes: Optional[int] = None
+    notes: Optional[str] = None
+    completed: Optional[bool] = None
+
+
 class WorkoutSession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str

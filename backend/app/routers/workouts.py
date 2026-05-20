@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models.workout import WorkoutSession, WorkoutExercise, SetEntry
+from app.models.workout import WorkoutSession, WorkoutSessionCreate, WorkoutSessionUpdate, WorkoutExercise, SetEntry
 
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 
@@ -24,7 +24,8 @@ def get_workout(workout_id: int, session: Session = Depends(get_session)):
 
 
 @router.post("/", response_model=WorkoutSession, status_code=201)
-def create_workout(workout: WorkoutSession, session: Session = Depends(get_session)):
+def create_workout(data: WorkoutSessionCreate, session: Session = Depends(get_session)):
+    workout = WorkoutSession(**data.model_dump(exclude_unset=True))
     session.add(workout)
     session.commit()
     session.refresh(workout)
@@ -33,13 +34,12 @@ def create_workout(workout: WorkoutSession, session: Session = Depends(get_sessi
 
 @router.put("/{workout_id}", response_model=WorkoutSession)
 def update_workout(
-    workout_id: int, updates: WorkoutSession, session: Session = Depends(get_session)
+    workout_id: int, updates: WorkoutSessionUpdate, session: Session = Depends(get_session)
 ):
     workout = session.get(WorkoutSession, workout_id)
     if not workout:
         raise HTTPException(status_code=404, detail="Workout not found")
-    data = updates.model_dump(exclude_unset=True, exclude={"id"})
-    for key, value in data.items():
+    for key, value in updates.model_dump(exclude_unset=True).items():
         setattr(workout, key, value)
     session.commit()
     session.refresh(workout)
