@@ -1,4 +1,4 @@
-import type { WorkoutSession, WorkoutStats } from './types'
+import type { WorkoutSession, WorkoutStats, HabitDay } from './types'
 
 const BASE = '/api'
 
@@ -50,5 +50,8 @@ export const api = {
       delete: (workoutId: number, weId: number, setId: number) =>
         request(`/workouts/${workoutId}/exercises/${weId}/sets/${setId}`, { method: 'DELETE' }),
     },
+  },
+  habits: {
+    chart: (weeks = 52) => request<HabitDay[]>(`/habits/chart?weeks=${weeks}`),
   },
 }

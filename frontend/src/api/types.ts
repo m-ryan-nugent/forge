@@ -47,6 +47,13 @@ export interface WorkoutExercise {
   notes: string | null
 }
 
+export interface HabitDay {
+  date: string
+  workout_count: number
+  intensity: 0 | 1 | 2 | 3 | 4
+  titles: string[]
+}
+
 export interface SetEntry {
   id: number
   workout_exercise_id: number
