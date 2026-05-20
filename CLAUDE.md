@@ -94,4 +94,10 @@ All backend calls go through `api` in `client.ts` — do not use raw `fetch` in 
 
 ## Build Phases
 
-Phases 1, 2, and 3 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phases (Habit Tracker → Progress → Polish).
+Phases 1–4 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phases (Progress → Polish).
+
+### Phase 4: Habit Tracker (complete)
+
+`GET /api/habits/chart?weeks=N` (router: `app/routers/habits.py`) derives daily activity from `WorkoutSession` — no separate `HabitEntry` table needed. Intensity 0–4 is based on exercise count per workout (0=none, 1=1–2, 2=3–4, 3=5–6, 4=7+). Returns `[{date, workout_count, intensity, titles}]`.
+
+`HabitChart` (`frontend/src/components/HabitChart.tsx`) renders an SVG GitHub-style 52×7 grid with month labels, Mon/Wed/Fri day labels, hover tooltips, and a legend. Displayed in Dashboard under a "Consistency" heading. The `habits.chart()` method lives in `api/client.ts`; `HabitDay` type is in `api/types.ts`.
