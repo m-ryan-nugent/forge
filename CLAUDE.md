@@ -36,14 +36,18 @@ No test suite is configured yet.
 Router/model layout:
 ```
 app/
-├── main.py          # FastAPI app, CORS, startup hook, router registration, exercise seed
-├── database.py      # SQLite engine + get_session dependency
+├── main.py           # FastAPI app, CORS, startup hook, router registration, exercise seed
+├── database.py       # SQLite engine + get_session dependency
 ├── models/
-│   ├── exercise.py  # Exercise table + MuscleGroup / Equipment / ExerciseCategory enums
-│   └── workout.py   # WorkoutSession (+ Create/Update/Summary models), WorkoutExercise, SetEntry
+│   ├── exercise.py   # Exercise table + MuscleGroup / Equipment / ExerciseCategory enums
+│   ├── workout.py    # WorkoutSession (+ Create/Update/Summary models), WorkoutExercise, SetEntry
+│   └── body_metric.py # BodyMetric table + BodyMetricCreate input model
 └── routers/
-    ├── exercises.py # CRUD + filter by muscle_group / equipment / category / search
-    └── workouts.py  # CRUD for sessions; nested routes for exercises and sets; /stats endpoint
+    ├── exercises.py  # CRUD + filter by muscle_group / equipment / category / search
+    ├── workouts.py   # CRUD for sessions; nested routes for exercises and sets; /stats endpoint
+    ├── habits.py     # GET /habits/chart — derives activity from WorkoutSession
+    ├── progress.py   # GET /progress/exercise/{id}, /records, /volume, /frequency
+    └── body_metrics.py # GET/POST /body-metrics/, DELETE /body-metrics/{id}
 ```
 
 Workout data is nested three levels deep: `WorkoutSession → WorkoutExercise → SetEntry`. The router paths mirror this: `/workouts/{id}/exercises/{we_id}/sets/{set_id}`.
@@ -68,14 +72,15 @@ src/
 │   └── types.ts         # TypeScript interfaces mirroring backend SQLModel models
 ├── components/
 │   ├── Layout.tsx        # Outlet wrapper; desktop sidebar + mobile bottom nav spacing
-│   └── Navbar.tsx        # Responsive nav (sidebar on md+, bottom bar on mobile)
+│   ├── Navbar.tsx        # Responsive nav (sidebar on md+, bottom bar on mobile)
+│   └── HabitChart.tsx    # SVG GitHub-style 52×7 consistency grid, used on Dashboard
 └── pages/
     ├── Dashboard.tsx     # Stats (streak, weekly count, muscle groups), recent workouts
     ├── WorkoutLogger.tsx # Create new workout form → navigates to WorkoutDetail
     ├── WorkoutDetail.tsx # Active workout logger: exercises, sets, complete/reopen
     ├── ExerciseLibrary.tsx
     ├── WorkoutHistory.tsx # Filterable (week/month/all), grouped by month, exercise count
-    └── Progress.tsx
+    └── Progress.tsx      # Tabbed: Records | Strength | Volume | Body (see Phase 5)
 ```
 
 All backend calls go through `api` in `client.ts` — do not use raw `fetch` in components. Types in `types.ts` must stay in sync with the SQLModel models in `backend/app/models/`.
@@ -94,10 +99,32 @@ All backend calls go through `api` in `client.ts` — do not use raw `fetch` in 
 
 ## Build Phases
 
-Phases 1–4 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phases (Progress → Polish).
+Phases 1–5 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phase (Polish).
 
 ### Phase 4: Habit Tracker (complete)
 
 `GET /api/habits/chart?weeks=N` (router: `app/routers/habits.py`) derives daily activity from `WorkoutSession` — no separate `HabitEntry` table needed. Intensity 0–4 is based on exercise count per workout (0=none, 1=1–2, 2=3–4, 3=5–6, 4=7+). Returns `[{date, workout_count, intensity, titles}]`.
 
 `HabitChart` (`frontend/src/components/HabitChart.tsx`) renders an SVG GitHub-style 52×7 grid with month labels, Mon/Wed/Fri day labels, hover tooltips, and a legend. Displayed in Dashboard under a "Consistency" heading. The `habits.chart()` method lives in `api/client.ts`; `HabitDay` type is in `api/types.ts`.
+
+### Phase 5: Progress Tracking (complete)
+
+**Backend — `app/routers/progress.py`** (prefix `/api/progress`):
+- `GET /exercise/{exercise_id}?months=N` — per-session `{date, max_weight, total_volume, set_count}` for one exercise in completed workouts. Filters to completed sets with weight.
+- `GET /records` — all-time best set per exercise: `{exercise_id, exercise_name, muscle_group, max_weight, reps_at_max, date}`. Sorted by muscle group.
+- `GET /volume?weeks=N` — weekly volume (weight × reps) grouped by `{week_start, muscle_group, total_volume}`. Default 12 weeks.
+- `GET /frequency?months=N` — completed workout count per week: `{week_start, count}`. Default 6 months.
+
+**Backend — `app/routers/body_metrics.py`** (prefix `/api/body-metrics`):
+- `GET /` — all entries ordered by date desc.
+- `POST /` — create entry (`BodyMetricCreate`: date, body_weight, body_fat_percentage, notes).
+- `DELETE /{id}` — delete entry.
+- `BodyMetric` table is in `app/models/body_metric.py`; imported in `main.py` so `create_all` picks it up.
+
+**Frontend — `Progress.tsx`** has four tabs, each a separate card layout:
+- **Records** — sortable table of PRs pulled from `/progress/records`.
+- **Strength** — exercise dropdown (only exercises with PR data) + time-range buttons (1M/3M/6M/12M) + `LineChart` SVG of max weight per session + summary stats row.
+- **Volume** — `VolumeChart` (horizontal div-based bars, total weight×reps per muscle group over 12 weeks) + `FrequencyChart` (SVG vertical bar chart of workouts/week over 6 months).
+- **Body** — date/weight/body-fat log form + `LineChart` SVG of body weight over time (blue, `#2563EB`) + log table with delete.
+
+All three chart helpers (`LineChart`, `FrequencyChart`, `VolumeChart`) are defined inline in `Progress.tsx`. `LineChart` is reused for both strength and body weight with a `color` prop.
