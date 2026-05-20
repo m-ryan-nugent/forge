@@ -1,18 +1,80 @@
+from datetime import date as date_type, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models.workout import WorkoutSession, WorkoutSessionCreate, WorkoutSessionUpdate, WorkoutExercise, SetEntry
+from app.models.exercise import Exercise
+from app.models.workout import WorkoutSession, WorkoutSessionCreate, WorkoutSessionUpdate, WorkoutSessionSummary, WorkoutExercise, SetEntry
 
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 
 
+def _compute_streak(workout_dates: list) -> int:
+    if not workout_dates:
+        return 0
+    unique_dates = sorted(set(workout_dates), reverse=True)
+    today = date_type.today()
+    if unique_dates[0] < today - timedelta(days=1):
+        return 0
+    streak = 0
+    check = unique_dates[0]
+    for d in unique_dates:
+        if d == check:
+            streak += 1
+            check -= timedelta(days=1)
+        else:
+            break
+    return streak
+
+
 # --- Workout Sessions ---
 
-@router.get("/", response_model=List[WorkoutSession])
+@router.get("/stats")
+def get_stats(session: Session = Depends(get_session)):
+    today = date_type.today()
+    week_start = today - timedelta(days=today.weekday())  # Monday
+
+    all_workouts = session.exec(select(WorkoutSession)).all()
+    completed = [w for w in all_workouts if w.completed]
+
+    weekly_count = sum(1 for w in completed if w.date >= week_start)
+    current_streak = _compute_streak([w.date for w in completed])
+
+    last = max(completed, key=lambda w: w.date) if completed else None
+
+    muscle_groups = list(set(
+        mg.value
+        for mg in session.exec(
+            select(Exercise.primary_muscle_group)
+            .join(WorkoutExercise, WorkoutExercise.exercise_id == Exercise.id)
+            .join(WorkoutSession, WorkoutSession.id == WorkoutExercise.workout_session_id)
+            .where(WorkoutSession.completed == True)
+            .where(WorkoutSession.date >= week_start)
+        ).all()
+    ))
+
+    return {
+        "total_completed": len(completed),
+        "total_all": len(all_workouts),
+        "weekly_count": weekly_count,
+        "current_streak": current_streak,
+        "last_workout": {"id": last.id, "title": last.title, "date": str(last.date)} if last else None,
+        "muscle_groups_this_week": muscle_groups,
+    }
+
+
+@router.get("/", response_model=List[WorkoutSessionSummary])
 def list_workouts(session: Session = Depends(get_session)):
-    return session.exec(select(WorkoutSession).order_by(WorkoutSession.date.desc())).all()
+    workouts = session.exec(select(WorkoutSession).order_by(WorkoutSession.date.desc())).all()
+    result = []
+    for w in workouts:
+        count = session.exec(
+            select(func.count()).select_from(WorkoutExercise).where(WorkoutExercise.workout_session_id == w.id)
+        ).one()
+        result.append(WorkoutSessionSummary(**w.model_dump(), exercise_count=count))
+    return result
 
 
 @router.get("/{workout_id}", response_model=WorkoutSession)
