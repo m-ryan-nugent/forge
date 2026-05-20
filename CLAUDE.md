@@ -40,15 +40,17 @@ app/
 ├── database.py      # SQLite engine + get_session dependency
 ├── models/
 │   ├── exercise.py  # Exercise table + MuscleGroup / Equipment / ExerciseCategory enums
-│   └── workout.py   # WorkoutSession (+ Create/Update input models), WorkoutExercise, SetEntry
+│   └── workout.py   # WorkoutSession (+ Create/Update/Summary models), WorkoutExercise, SetEntry
 └── routers/
     ├── exercises.py # CRUD + filter by muscle_group / equipment / category / search
-    └── workouts.py  # CRUD for sessions; nested routes for exercises and sets
+    └── workouts.py  # CRUD for sessions; nested routes for exercises and sets; /stats endpoint
 ```
 
 Workout data is nested three levels deep: `WorkoutSession → WorkoutExercise → SetEntry`. The router paths mirror this: `/workouts/{id}/exercises/{we_id}/sets/{set_id}`.
 
 `secondary_muscle_groups` on `Exercise` is stored as a comma-separated string (not a relation).
+
+`GET /api/workouts/` returns `WorkoutSessionSummary` (includes `exercise_count`). `GET /api/workouts/stats` returns weekly count, current streak, total completed, last workout, and muscle groups trained this week. The `/stats` route must stay registered before `/{workout_id}` to avoid routing collision.
 
 **Important — SQLModel input models**: Never use a `table=True` SQLModel as a request body for POST/PUT endpoints. SQLModel table models bypass Pydantic's type coercions (e.g. `date`, `datetime`), causing SQLAlchemy to receive raw strings and fail on flush. Always use a separate non-table `SQLModel` (e.g. `WorkoutSessionCreate`, `WorkoutSessionUpdate`) as the request body type, then construct the table model from it.
 
@@ -68,11 +70,11 @@ src/
 │   ├── Layout.tsx        # Outlet wrapper; desktop sidebar + mobile bottom nav spacing
 │   └── Navbar.tsx        # Responsive nav (sidebar on md+, bottom bar on mobile)
 └── pages/
-    ├── Dashboard.tsx     # Overview: stats, recent workouts (links to WorkoutDetail)
+    ├── Dashboard.tsx     # Stats (streak, weekly count, muscle groups), recent workouts
     ├── WorkoutLogger.tsx # Create new workout form → navigates to WorkoutDetail
     ├── WorkoutDetail.tsx # Active workout logger: exercises, sets, complete/reopen
     ├── ExerciseLibrary.tsx
-    ├── WorkoutHistory.tsx # Workout list (links to WorkoutDetail)
+    ├── WorkoutHistory.tsx # Filterable (week/month/all), grouped by month, exercise count
     └── Progress.tsx
 ```
 
@@ -92,4 +94,4 @@ All backend calls go through `api` in `client.ts` — do not use raw `fetch` in 
 
 ## Build Phases
 
-Phases 1 and 2 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phases (History/Dashboard → Habit Tracker → Progress → Polish).
+Phases 1, 2, and 3 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phases (Habit Tracker → Progress → Polish).
