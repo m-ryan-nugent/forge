@@ -1,3 +1,5 @@
+import type { WorkoutSession, WorkoutStats } from './types'
+
 const BASE = '/api'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -25,7 +27,8 @@ export const api = {
     delete: (id: number) => request(`/exercises/${id}`, { method: 'DELETE' }),
   },
   workouts: {
-    list: () => request('/workouts/'),
+    list: () => request<WorkoutSession[]>('/workouts/'),
+    stats: () => request<WorkoutStats>('/workouts/stats'),
     get: (id: number) => request(`/workouts/${id}`),
     create: (body: unknown) => request('/workouts/', { method: 'POST', body: JSON.stringify(body) }),
     update: (id: number, body: unknown) => request(`/workouts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),

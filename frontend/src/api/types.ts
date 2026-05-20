@@ -27,6 +27,16 @@ export interface WorkoutSession {
   notes: string | null
   completed: boolean
   created_at: string
+  exercise_count?: number
+}
+
+export interface WorkoutStats {
+  total_completed: number
+  total_all: number
+  weekly_count: number
+  current_streak: number
+  last_workout: { id: number; title: string; date: string } | null
+  muscle_groups_this_week: string[]
 }
 
 export interface WorkoutExercise {
