@@ -1,0 +1,18 @@
+[project]
+name = "forge-backend"
+version = "0.1.0"
+description = "Forge fitness tracker API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.1",
+    "pydantic>=2.13.4",
+    "python-multipart>=0.0.29",
+    "sqlmodel>=0.0.38",
+    "uvicorn[standard]>=0.47.0",
+]
+
+[project.scripts]
+dev = "uvicorn app.main:app --reload"
+
+[tool.uv]
+dev-dependencies = []
