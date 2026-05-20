@@ -1,0 +1,49 @@
+export type MuscleGroup =
+  | 'chest' | 'back' | 'shoulders' | 'biceps' | 'triceps'
+  | 'forearms' | 'core' | 'quads' | 'hamstrings' | 'glutes'
+  | 'calves' | 'full_body' | 'cardio'
+
+export type Equipment =
+  | 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'cable'
+  | 'bodyweight' | 'resistance_band' | 'cardio_machine' | 'other'
+
+export type ExerciseCategory = 'strength' | 'cardio' | 'mobility' | 'core'
+
+export interface Exercise {
+  id: number
+  name: string
+  primary_muscle_group: MuscleGroup
+  secondary_muscle_groups: string | null
+  equipment: Equipment
+  category: ExerciseCategory
+  instructions: string | null
+}
+
+export interface WorkoutSession {
+  id: number
+  title: string
+  date: string
+  duration_minutes: number | null
+  notes: string | null
+  completed: boolean
+  created_at: string
+}
+
+export interface WorkoutExercise {
+  id: number
+  workout_session_id: number
+  exercise_id: number
+  order: number
+  notes: string | null
+}
+
+export interface SetEntry {
+  id: number
+  workout_exercise_id: number
+  set_number: number
+  reps: number | null
+  weight: number | null
+  duration_seconds: number | null
+  distance: number | null
+  completed: boolean
+}
