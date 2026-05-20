@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
-import type { WorkoutSession, WorkoutStats } from '../api/types'
+import type { WorkoutSession, WorkoutStats, HabitDay } from '../api/types'
+import { HabitChart } from '../components/HabitChart'
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
@@ -37,13 +38,15 @@ const MUSCLE_COLORS: Record<string, string> = {
 export function Dashboard() {
   const [stats, setStats] = useState<WorkoutStats | null>(null)
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSession[]>([])
+  const [habitDays, setHabitDays] = useState<HabitDay[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([api.workouts.stats(), api.workouts.list()])
-      .then(([s, ws]) => {
+    Promise.all([api.workouts.stats(), api.workouts.list(), api.habits.chart()])
+      .then(([s, ws, hd]) => {
         setStats(s)
         setRecentWorkouts(ws.slice(0, 5))
+        setHabitDays(hd)
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -82,6 +85,18 @@ export function Dashboard() {
           value={loading ? '—' : lastWorkoutLabel}
         />
       </div>
+
+      {/* Habit chart */}
+      {!loading && habitDays.length > 0 && (
+        <section>
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Consistency
+          </h3>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <HabitChart days={habitDays} />
+          </div>
+        </section>
+      )}
 
       {/* Start workout CTA */}
       <Link
