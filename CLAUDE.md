@@ -99,7 +99,7 @@ All backend calls go through `api` in `client.ts` — do not use raw `fetch` in 
 
 ## Build Phases
 
-Phases 1–5 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec and remaining phase (Polish).
+All phases (1–6) are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product spec.
 
 ### Phase 4: Habit Tracker (complete)
 
@@ -128,3 +128,17 @@ Phases 1–5 are complete. See `docs/FORGE_PRODUCT_SPEC.md` for the full product
 - **Body** — date/weight/body-fat log form + `LineChart` SVG of body weight over time (blue, `#2563EB`) + log table with delete.
 
 All three chart helpers (`LineChart`, `FrequencyChart`, `VolumeChart`) are defined inline in `Progress.tsx`. `LineChart` is reused for both strength and body weight with a `color` prop.
+
+### Phase 6: Polish (complete)
+
+**Dark/light mode**: Class-based dark mode using `@custom-variant dark` in Tailwind v4. A theme toggle button (☾/☀) lives in both the desktop sidebar and mobile bottom nav. Selection persists to `localStorage` (`forge-theme`). A FOUC-prevention script in `index.html` sets the `dark` class on `<html>` before paint. CSS variables `--habit-empty`, `--chart-text`, `--chart-grid` in `index.css` drive SVG chart colors in dark mode.
+
+**Error handling**: All pages (Dashboard, WorkoutHistory, ExerciseLibrary, Progress) now surface a red inline error banner on fetch failures instead of silently logging to console.
+
+**Loading skeletons**: Dashboard, WorkoutHistory, ExerciseLibrary, WorkoutDetail, and the AddExerciseModal all render animated `animate-pulse` skeleton cards while data loads instead of bare "Loading..." text.
+
+**Better empty states**: All empty states include an emoji and helpful description text.
+
+**Mobile improvements**: WorkoutDetail set grid changed from `grid-cols-[2.5rem_1fr_1fr_4.5rem]` to `grid-cols-[2rem_1fr_1fr_auto]` (mobile) / `sm:grid-cols-[2.5rem_1fr_1fr_4.5rem]` (desktop). Navbar mobile labels always visible using `text-[10px]` (fixed broken `xs:block`). Theme toggle added to mobile bottom nav.
+
+**PWA support**: `public/manifest.webmanifest` added with standalone display mode. `index.html` includes manifest link, `theme-color`, `apple-mobile-web-app-*` meta tags. Page title updated from "frontend" to "Forge — Build Strength. Stay Consistent."
