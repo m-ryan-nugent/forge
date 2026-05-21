@@ -20,7 +20,7 @@ interface LineChartProps {
 function LineChart({ data, unit = '', color = '#DC2626' }: LineChartProps) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-40 text-gray-400 dark:text-gray-500 text-sm">
         No data yet
       </div>
     )
@@ -74,8 +74,8 @@ function LineChart({ data, unit = '', color = '#DC2626' }: LineChartProps) {
 
       {yTicks.map((v, i) => (
         <g key={i}>
-          <line x1={ml} y1={yPos(v)} x2={W - mr} y2={yPos(v)} stroke="#f3f4f6" strokeWidth="1" />
-          <text x={ml - 8} y={yPos(v) + 4} textAnchor="end" fontSize={11} fill="#9ca3af">
+          <line x1={ml} y1={yPos(v)} x2={W - mr} y2={yPos(v)} stroke="var(--chart-grid)" strokeWidth="1" />
+          <text x={ml - 8} y={yPos(v) + 4} textAnchor="end" fontSize={11} fill="var(--chart-text)">
             {fmtVal(v)}
           </text>
         </g>
@@ -103,7 +103,7 @@ function LineChart({ data, unit = '', color = '#DC2626' }: LineChartProps) {
           y={mt + ch + 22}
           textAnchor="middle"
           fontSize={10}
-          fill="#9ca3af"
+          fill="var(--chart-text)"
         >
           {fmtDate(data[i].date)}
         </text>
@@ -117,7 +117,7 @@ function LineChart({ data, unit = '', color = '#DC2626' }: LineChartProps) {
 function FrequencyChart({ data }: { data: FrequencyPoint[] }) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-32 text-gray-400 dark:text-gray-500 text-sm">
         No data yet
       </div>
     )
@@ -155,7 +155,7 @@ function FrequencyChart({ data }: { data: FrequencyPoint[] }) {
               opacity={0.75}
             />
             {i % step === 0 && (
-              <text x={cx} y={mt + ch + 18} textAnchor="middle" fontSize={9} fill="#9ca3af">
+              <text x={cx} y={mt + ch + 18} textAnchor="middle" fontSize={9} fill="var(--chart-text)">
                 {fmtDate(d.week_start)}
               </text>
             )}
@@ -166,7 +166,7 @@ function FrequencyChart({ data }: { data: FrequencyPoint[] }) {
         if (v > maxCount) return null
         const y = mt + ch - (v / maxCount) * ch
         return (
-          <text key={v} x={ml - 4} y={y + 3} textAnchor="end" fontSize={9} fill="#d1d5db">
+          <text key={v} x={ml - 4} y={y + 3} textAnchor="end" fontSize={9} fill="var(--chart-text)">
             {v}
           </text>
         )
@@ -189,7 +189,7 @@ function VolumeChart({ data }: { data: VolumePoint[] }) {
 
   if (!sorted.length) {
     return (
-      <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-32 text-gray-400 dark:text-gray-500 text-sm">
         No data yet
       </div>
     )
@@ -201,10 +201,10 @@ function VolumeChart({ data }: { data: VolumePoint[] }) {
     <div className="space-y-3">
       {sorted.map(([muscle, vol]) => (
         <div key={muscle} className="flex items-center gap-3">
-          <div className="text-sm text-gray-600 w-28 text-right capitalize shrink-0">
+          <div className="text-sm text-gray-600 dark:text-gray-300 w-28 text-right capitalize shrink-0">
             {muscle.replace(/_/g, ' ')}
           </div>
-          <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+          <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-5 overflow-hidden">
             <div
               className="h-5 rounded-full"
               style={{
@@ -213,7 +213,7 @@ function VolumeChart({ data }: { data: VolumePoint[] }) {
               }}
             />
           </div>
-          <div className="text-xs text-gray-400 w-20 text-right shrink-0 tabular-nums">
+          <div className="text-xs text-gray-400 dark:text-gray-500 w-20 text-right shrink-0 tabular-nums">
             {vol >= 1000 ? `${(vol / 1000).toFixed(1)}k` : vol.toFixed(0)} lbs
           </div>
         </div>
@@ -235,6 +235,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function Progress() {
   const [tab, setTab] = useState<Tab>('records')
+  const [error, setError] = useState<string | null>(null)
 
   const [records, setRecords] = useState<PersonalRecord[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -251,11 +252,21 @@ export function Progress() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    api.progress.records().then(setRecords)
-    api.progress.volume(12).then(setVolumeData)
-    api.progress.frequency(6).then(setFrequencyData)
-    api.bodyMetrics.list().then(setBodyMetrics)
-    api.exercises.list().then(data => setExercises(data as Exercise[]))
+    Promise.all([
+      api.progress.records(),
+      api.progress.volume(12),
+      api.progress.frequency(6),
+      api.bodyMetrics.list(),
+      api.exercises.list(),
+    ])
+      .then(([recs, vol, freq, metrics, exs]) => {
+        setRecords(recs)
+        setVolumeData(vol)
+        setFrequencyData(freq)
+        setBodyMetrics(metrics)
+        setExercises(exs as Exercise[])
+      })
+      .catch(() => setError('Failed to load progress data. Is the server running?'))
   }, [])
 
   useEffect(() => {
@@ -307,23 +318,31 @@ export function Progress() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .map(m => ({ date: m.date, value: m.body_weight! }))
 
+  const inputCls = 'border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Progress</h2>
-        <p className="text-gray-500 text-sm mt-1">Track your strength and consistency over time.</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Progress</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Track your strength and consistency over time.</p>
       </div>
 
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
       {/* Tab bar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               tab === t.id
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             {t.label}
@@ -333,23 +352,24 @@ export function Progress() {
 
       {/* ── Records ── */}
       {tab === 'records' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">Personal Records</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Personal Records</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               Best set per exercise across all completed workouts
             </p>
           </div>
 
           {records.length === 0 ? (
-            <div className="px-5 py-16 text-center text-gray-400 text-sm">
-              Complete some workouts to see your records.
+            <div className="px-5 py-16 text-center">
+              <p className="text-2xl mb-2">🏆</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm">Complete some workouts to see your records.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wide">
+                  <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                     <th className="text-left px-5 py-3">Exercise</th>
                     <th className="text-left px-4 py-3">Muscle</th>
                     <th className="text-right px-4 py-3">Best Weight</th>
@@ -357,22 +377,22 @@ export function Progress() {
                     <th className="text-right px-5 py-3">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {records.map(r => (
-                    <tr key={r.exercise_id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 font-medium text-gray-900">{r.exercise_name}</td>
+                    <tr key={r.exercise_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-5 py-3 font-medium text-gray-900 dark:text-white">{r.exercise_name}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 capitalize">
                           {r.muscle_group.replace(/_/g, ' ')}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-red-600 tabular-nums">
+                      <td className="px-4 py-3 text-right font-semibold text-red-600 dark:text-red-400 tabular-nums">
                         {r.max_weight} lbs
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-500 tabular-nums">
+                      <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400 tabular-nums">
                         {r.reps_at_max != null ? `${r.reps_at_max}` : '—'}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-400">{fmtDate(r.date)}</td>
+                      <td className="px-5 py-3 text-right text-gray-400 dark:text-gray-500">{fmtDate(r.date)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -384,16 +404,16 @@ export function Progress() {
 
       {/* ── Strength ── */}
       {tab === 'strength' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-5">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 block mb-1">Exercise</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Exercise</label>
               <select
                 value={selectedExercise ?? ''}
                 onChange={e =>
                   setSelectedExercise(e.target.value ? Number(e.target.value) : null)
                 }
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                className={inputCls + ' w-full'}
               >
                 <option value="">Select an exercise…</option>
                 {exercisesWithData.length === 0 && (
@@ -407,7 +427,7 @@ export function Progress() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Time range</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Time range</label>
               <div className="flex gap-1">
                 {[1, 3, 6, 12].map(m => (
                   <button
@@ -416,7 +436,7 @@ export function Progress() {
                     className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
                       strengthMonths === m
                         ? 'bg-red-600 text-white border-red-600'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     {m}M
@@ -427,13 +447,13 @@ export function Progress() {
           </div>
 
           {!selectedExercise ? (
-            <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-40 text-gray-400 dark:text-gray-500 text-sm">
               Select an exercise above to view strength progress.
             </div>
           ) : (
             <>
               <div>
-                <p className="text-xs text-gray-400 mb-2">Max weight per session (lbs)</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Max weight per session (lbs)</p>
                 <LineChart
                   data={exerciseProgress.map(p => ({ date: p.date, value: p.max_weight }))}
                   unit=" lbs"
@@ -441,33 +461,33 @@ export function Progress() {
               </div>
 
               {exerciseProgress.length > 0 && (
-                <div className="grid grid-cols-3 gap-4 border-t border-gray-50 pt-5">
+                <div className="grid grid-cols-3 gap-4 border-t border-gray-50 dark:border-gray-700 pt-5">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-red-600 tabular-nums">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400 tabular-nums">
                       {Math.max(...exerciseProgress.map(p => p.max_weight))}
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">Best (lbs)</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Best (lbs)</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900 tabular-nums">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {exerciseProgress.reduce((s, p) => s + p.set_count, 0)}
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">Total sets</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Total sets</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900 tabular-nums">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {(
                         exerciseProgress.reduce((s, p) => s + p.total_volume, 0) / 1000
                       ).toFixed(1)}
                       k
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">Volume (lbs)</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Volume (lbs)</div>
                   </div>
                 </div>
               )}
 
               {exerciseProgress.length === 0 && (
-                <div className="flex items-center justify-center h-20 text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-20 text-gray-400 dark:text-gray-500 text-sm">
                   No data for this exercise in the selected time range.
                 </div>
               )}
@@ -479,17 +499,17 @@ export function Progress() {
       {/* ── Volume ── */}
       {tab === 'volume' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="font-semibold text-gray-900">Volume by Muscle Group</h3>
-            <p className="text-xs text-gray-400 mt-0.5 mb-5">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Volume by Muscle Group</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-5">
               Total weight × reps, last 12 weeks
             </p>
             <VolumeChart data={volumeData} />
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="font-semibold text-gray-900">Workout Frequency</h3>
-            <p className="text-xs text-gray-400 mt-0.5 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Workout Frequency</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-4">
               Completed workouts per week, last 6 months
             </p>
             <FrequencyChart data={frequencyData} />
@@ -501,20 +521,20 @@ export function Progress() {
       {tab === 'body' && (
         <div className="space-y-4">
           {/* Log form */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Log Body Metrics</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Log Body Metrics</h3>
             <form onSubmit={handleAddBodyMetric} className="flex flex-wrap gap-3 items-end">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Date</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Date</label>
                 <input
                   type="date"
                   value={bodyDate}
                   onChange={e => setBodyDate(e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className={inputCls}
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Weight (lbs)</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Weight (lbs)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -522,11 +542,11 @@ export function Progress() {
                   placeholder="175.0"
                   value={bodyWeight}
                   onChange={e => setBodyWeight(e.target.value)}
-                  className="w-32 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className={inputCls + ' w-32'}
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Body Fat % (optional)</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Body Fat % (optional)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -535,7 +555,7 @@ export function Progress() {
                   placeholder="15.0"
                   value={bodyFat}
                   onChange={e => setBodyFat(e.target.value)}
-                  className="w-32 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className={inputCls + ' w-32'}
                 />
               </div>
               <button
@@ -550,41 +570,42 @@ export function Progress() {
 
           {/* Body weight chart */}
           {bodyWeightData.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-1">Body Weight</h3>
-              <p className="text-xs text-gray-400 mb-3">Weight over time (lbs)</p>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Body Weight</h3>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Weight over time (lbs)</p>
               <LineChart data={bodyWeightData} unit=" lbs" color="#2563EB" />
             </div>
           )}
 
           {/* Recent entries table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900">Log</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Log</h3>
             </div>
             {bodyMetrics.length === 0 ? (
-              <div className="px-5 py-16 text-center text-gray-400 text-sm">
-                No body metrics logged yet.
+              <div className="px-5 py-16 text-center">
+                <p className="text-2xl mb-2">📊</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm">No body metrics logged yet.</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-gray-700">
                 {bodyMetrics.slice(0, 30).map(m => (
                   <div key={m.id} className="flex items-center justify-between px-5 py-3">
-                    <div className="text-sm text-gray-500">{fmtDate(m.date)}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{fmtDate(m.date)}</div>
                     <div className="flex items-center gap-5">
                       {m.body_weight !== null && (
-                        <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white tabular-nums">
                           {m.body_weight} lbs
                         </span>
                       )}
                       {m.body_fat_percentage !== null && (
-                        <span className="text-sm text-gray-500 tabular-nums">
+                        <span className="text-sm text-gray-500 dark:text-gray-400 tabular-nums">
                           {m.body_fat_percentage}% BF
                         </span>
                       )}
                       <button
                         onClick={() => handleDeleteBodyMetric(m.id)}
-                        className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none"
+                        className="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors text-lg leading-none"
                         title="Delete"
                       >
                         ×
