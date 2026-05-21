@@ -1,0 +1,18 @@
+{
+  "name": "Forge — Fitness Tracker",
+  "short_name": "Forge",
+  "description": "Build strength, consistency, and discipline one workout at a time.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#DC2626",
+  "background_color": "#F5F5F5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

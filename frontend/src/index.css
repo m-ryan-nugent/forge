@@ -1,10 +1,26 @@
 @import "tailwindcss";
 
+/* Class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #DC2626;
   --color-primary-hover: #EF4444;
   --color-success: #22C55E;
   --color-warning: #F59E0B;
+}
+
+/* CSS variables for SVG-based charts (can't use Tailwind dark: in SVG fills) */
+:root {
+  --habit-empty: #EBEDF0;
+  --chart-text: #9CA3AF;
+  --chart-grid: #F3F4F6;
+}
+
+.dark {
+  --habit-empty: #374151;
+  --chart-text: #6B7280;
+  --chart-grid: #1F2937;
 }
 
 body {
@@ -13,6 +29,11 @@ body {
   -webkit-font-smoothing: antialiased;
   background-color: #F5F5F5;
   color: #1E1E1E;
+}
+
+.dark body {
+  background-color: #111827;
+  color: #F9FAFB;
 }
 
 #root {
