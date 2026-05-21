@@ -2,11 +2,11 @@ import { useState } from 'react'
 import type { HabitDay } from '../api/types'
 
 const INTENSITY_COLORS = [
-  '#EBEDF0', // 0: no workout
-  '#FCA5A5', // 1: 1–2 exercises
-  '#F87171', // 2: 3–4 exercises
-  '#EF4444', // 3: 5–6 exercises
-  '#DC2626', // 4: 7+ exercises
+  'var(--habit-empty)', // 0: no workout — adapts to dark/light via CSS var
+  '#FCA5A5',           // 1: 1–2 exercises
+  '#F87171',           // 2: 3–4 exercises
+  '#EF4444',           // 3: 5–6 exercises
+  '#DC2626',           // 4: 7+ exercises
 ]
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -39,7 +39,6 @@ export function HabitChart({ days }: Props) {
   weeks.forEach((week, col) => {
     const first = new Date(week[0].date + 'T00:00:00')
     if (col === 0 || first.getDate() <= 7) {
-      // Show month if first day of week is within first 7 days of the month
       if (col === 0 || new Date(weeks[col - 1][0].date + 'T00:00:00').getMonth() !== first.getMonth()) {
         monthLabels.push({ col, label: SHORT_MONTHS[first.getMonth()] })
       }
@@ -49,8 +48,8 @@ export function HabitChart({ days }: Props) {
   const cellSize = 13
   const cellGap = 3
   const step = cellSize + cellGap
-  const leftPad = 28 // space for day labels
-  const topPad = 20  // space for month labels
+  const leftPad = 28
+  const topPad = 20
   const svgWidth = leftPad + weeks.length * step
   const svgHeight = topPad + 7 * step
 
@@ -75,7 +74,7 @@ export function HabitChart({ days }: Props) {
             x={leftPad + col * step}
             y={12}
             fontSize={10}
-            fill="#6B7280"
+            fill="var(--chart-text)"
             fontFamily="system-ui, sans-serif"
           >
             {label}
@@ -89,7 +88,7 @@ export function HabitChart({ days }: Props) {
             x={leftPad - 4}
             y={topPad + dayIndex * step + cellSize - 2}
             fontSize={9}
-            fill="#9CA3AF"
+            fill="var(--chart-text)"
             textAnchor="end"
             fontFamily="system-ui, sans-serif"
           >
@@ -131,7 +130,7 @@ export function HabitChart({ days }: Props) {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="absolute z-10 pointer-events-none bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap"
+          className="absolute z-10 pointer-events-none bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap"
           style={{
             left: tooltip.x,
             top: tooltip.y - 8,
@@ -156,7 +155,7 @@ export function HabitChart({ days }: Props) {
 
       {/* Legend */}
       <div className="flex items-center gap-1.5 mt-2 justify-end">
-        <span className="text-xs text-gray-400">Less</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">Less</span>
         {INTENSITY_COLORS.map((color, i) => (
           <div
             key={i}
@@ -164,7 +163,7 @@ export function HabitChart({ days }: Props) {
             style={{ width: 11, height: 11, backgroundColor: color, border: '1px solid rgba(0,0,0,0.06)' }}
           />
         ))}
-        <span className="text-xs text-gray-400">More</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">More</span>
       </div>
     </div>
   )
